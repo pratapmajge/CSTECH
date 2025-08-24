@@ -1,19 +1,23 @@
 import express from "express";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
+import cors from "cors";
 import agentRoutes from "./routes/agentRoutes.js";
 import listRoutes from "./routes/listRoutes.js";
-
+import authRoutes from "./routes/authRoutes.js";  // ✅ Add this
+import assignmentRoutes from "./routes/assignmentRoutes.js";
 
 
 dotenv.config();
-
 const app = express();
+app.use(cors());
 app.use(express.json());
 
+// Routes
+app.use("/api/auth", authRoutes);    // ✅ Add Auth routes
 app.use("/api/agents", agentRoutes);
-
 app.use("/api/lists", listRoutes);
+app.use("/api/assignments", assignmentRoutes);
 
 
 // Test route
