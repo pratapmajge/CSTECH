@@ -6,6 +6,7 @@ const assignmentSchema = new mongoose.Schema(
     agentId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     record: {
       firstName: String,
+      email: String,
       phone: String,
       notes: String,
     },

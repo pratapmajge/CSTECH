@@ -63,6 +63,7 @@ router.post(
           agentId: agent._id,
           record: {
             firstName: row.FirstName || row.first_name || row.firstName || "",
+            phone: row.email || row.email || "",
             phone: row.Phone || row.phone || "",
             notes: row.Notes || row.notes || "",
           },
