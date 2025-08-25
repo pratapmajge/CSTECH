@@ -11,7 +11,7 @@ export default function Navbar() {
 
   const handleLogout = () => {
     localStorage.removeItem("token"); // Clear token
-    navigate("/login"); // Redirect to login
+    navigate("/"); // Redirect to login
   };
 
   return (
@@ -27,7 +27,7 @@ export default function Navbar() {
         <ul className="navbar-nav ms-auto align-items-center">
           {!token ? (
             <>
-              <li className="nav-item">
+              {/* <li className="nav-item">
                 <Link
                   className={`btn ${
                     theme === "dark"
@@ -38,8 +38,8 @@ export default function Navbar() {
                 >
                   Login
                 </Link>
-              </li>
-              <li className="nav-item">
+              </li> */}
+              {/* <li className="nav-item">
                 <Link
                   className={`btn ${
                     theme === "dark"
@@ -50,7 +50,7 @@ export default function Navbar() {
                 >
                   Register
                 </Link>
-              </li>
+              </li> */}
             </>
           ) : (
             <>

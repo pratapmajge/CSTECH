@@ -14,17 +14,32 @@ const generateToken = (user) => {
   return jwt.sign(
     { id: user._id, role: user.role },
     process.env.JWT_SECRET,
-    { expiresIn: "1d" } // 1 day
+    { expiresIn: "1d" }
   );
 };
 
-// =================== REGISTER ===================
+// =================== REGISTER (Only for First Admin) ===================
 router.post("/register", async (req, res) => {
   try {
     const { name, email, mobile, password, role } = req.body;
 
     if (!name || !email || !mobile || !password) {
       return res.status(400).json({ message: "All fields are required" });
+    }
+
+    // Check if an Admin already exists
+    const adminExists = await User.findOne({ role: "admin" });
+    if (adminExists) {
+      return res.status(403).json({
+        message: "Public registration disabled. Only Admin can add users.",
+      });
+    }
+
+    // First user must be Admin
+    if (role !== "admin") {
+      return res
+        .status(400)
+        .json({ message: "First registered user must be an Admin." });
     }
 
     const existingUser = await User.findOne({ email });
@@ -39,16 +54,13 @@ router.post("/register", async (req, res) => {
       email,
       mobile,
       password: hashedPassword,
-      role: role || "agent",
+      role: "admin",
     });
 
     await user.save();
 
-    const token = generateToken(user);
-
     res.status(201).json({
-      message: "User registered successfully",
-      token,
+      message: "Initial Admin registered successfully",
       user: { id: user._id, name: user.name, role: user.role, email: user.email },
     });
   } catch (error) {

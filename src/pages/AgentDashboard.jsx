@@ -35,7 +35,6 @@ export default function AgentDashboard() {
           <thead>
             <tr>
               <th>First Name</th>
-              <th>Email</th>
               <th>Phone</th>
               <th>Notes</th>
               <th>List</th>
@@ -46,7 +45,6 @@ export default function AgentDashboard() {
               assignments.map((a) => (
                 <tr key={a._id}>
                   <td>{a.record.firstName}</td>
-                  <td>{a.record.email}</td>
                   <td>{a.record.phone}</td>
                   <td>{a.record.notes}</td>
                   <td>{a.listId?.name || "N/A"}</td>

@@ -2,7 +2,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar.jsx";
 import Login from "./pages/Login.jsx";
-import Register from "./pages/Register.jsx";
+// import Register from "./pages/Register.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import AgentDashboard from "./pages/AgentDashboard.jsx";
 import PrivateRoute from "./components/PrivateRoutes.jsx";
@@ -13,8 +13,8 @@ export default function App() {
       <Navbar />
       <Routes>
         {/* Public Routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route path="/" element={<Login />} />
+        {/* <Route path="/register" element={<Register />} /> */}
 
         {/* Protected Routes */}
         <Route

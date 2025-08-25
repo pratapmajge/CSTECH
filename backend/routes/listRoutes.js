@@ -1,6 +1,8 @@
 import express from "express";
 import multer from "multer";
+import path from "path";
 import csv from "csvtojson";
+import xlsx from "xlsx";
 import List from "../models/List.js";
 import User from "../models/User.js";
 import Assignment from "../models/Assignment.js";
@@ -12,9 +14,12 @@ const router = express.Router();
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
+// Allowed extensions
+const allowedExtensions = [".csv", ".xlsx", ".xls"];
+
 /**
  * ============================
- * Upload CSV and Create List (Admin Only)
+ * Upload File (CSV/XLSX/XLS) and Create List (Admin Only)
  * ============================
  */
 router.post(
@@ -24,7 +29,14 @@ router.post(
   async (req, res) => {
     try {
       if (!req.file) {
-        return res.status(400).json({ message: "CSV file is required" });
+        return res.status(400).json({ message: "File is required" });
+      }
+
+      const ext = path.extname(req.file.originalname).toLowerCase();
+      if (!allowedExtensions.includes(ext)) {
+        return res
+          .status(400)
+          .json({ message: "Invalid file format. Only CSV, XLSX, XLS allowed" });
       }
 
       const { name } = req.body;
@@ -32,12 +44,32 @@ router.post(
         return res.status(400).json({ message: "List name is required" });
       }
 
-      // Convert buffer -> string -> JSON
-      const csvString = req.file.buffer.toString("utf-8");
-      const jsonArray = await csv().fromString(csvString);
+      let jsonArray = [];
+
+      // Parse file depending on extension
+      if (ext === ".csv") {
+        const csvString = req.file.buffer.toString("utf-8");
+        jsonArray = await csv().fromString(csvString);
+      } else {
+        const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        jsonArray = xlsx.utils.sheet_to_json(worksheet);
+      }
 
       if (!jsonArray.length) {
-        return res.status(400).json({ message: "CSV is empty" });
+        return res.status(400).json({ message: "File is empty or invalid" });
+      }
+
+      // ✅ Check required fields
+      const requiredFields = ["FirstName", "Phone", "Notes"];
+      const missingFields = requiredFields.filter(
+        (f) => !Object.keys(jsonArray[0]).includes(f)
+      );
+      if (missingFields.length > 0) {
+        return res
+          .status(400)
+          .json({ message: `Missing required fields: ${missingFields.join(", ")}` });
       }
 
       // ✅ Check agents BEFORE saving list
@@ -57,13 +89,12 @@ router.post(
       // Distribute items among ALL available agents (round robin)
       let assignments = [];
       jsonArray.forEach((row, index) => {
-        const agent = agents[index % agents.length]; // ✅ use all agents, not just first 5
+        const agent = agents[index % agents.length];
         assignments.push({
           listId: newList._id,
           agentId: agent._id,
           record: {
             firstName: row.FirstName || row.first_name || row.firstName || "",
-            phone: row.email || row.email || "",
             phone: row.Phone || row.phone || "",
             notes: row.Notes || row.notes || "",
           },
@@ -73,11 +104,12 @@ router.post(
       await Assignment.insertMany(assignments);
 
       res.status(201).json({
-        message: "List uploaded & distributed successfully",
+        message: "File uploaded, validated & distributed successfully",
         list: { id: newList._id, name: newList.name, count: jsonArray.length },
         assignmentsCount: assignments.length,
       });
     } catch (error) {
+      console.error("Upload error:", error);
       res.status(500).json({ message: "Server error", error: error.message });
     }
   }
@@ -148,7 +180,6 @@ router.delete("/:id", authMiddleware(["admin"]), async (req, res) => {
     const list = await List.findByIdAndDelete(req.params.id);
     if (!list) return res.status(404).json({ message: "List not found" });
 
-    // also remove related assignments
     await Assignment.deleteMany({ listId: req.params.id });
 
     res.json({ message: "List & assignments deleted successfully" });
